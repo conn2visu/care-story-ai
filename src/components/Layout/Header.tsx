@@ -7,11 +7,14 @@ import {
   Pill, 
   MessageCircle, 
   Settings,
-  Heart
+  Heart,
+  LogOut
 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Header = () => {
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: Activity },
@@ -62,13 +65,24 @@ export const Header = () => {
             </Button>
             <Avatar className="h-8 w-8">
               <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                S
+                {user?.email?.charAt(0).toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium text-foreground">Sameer</p>
-              <p className="text-xs text-muted-foreground">Patient</p>
+              <p className="text-sm font-medium text-foreground">
+                {user?.user_metadata?.display_name || user?.email?.split("@")[0] || "User"}
+              </p>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={signOut}
+              className="ml-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline ml-2">Sign Out</span>
+            </Button>
           </div>
         </div>
       </div>
