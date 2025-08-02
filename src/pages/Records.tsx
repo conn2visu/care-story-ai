@@ -254,7 +254,7 @@ const Records = () => {
             <h1 className="text-3xl font-bold text-foreground">Medical Records</h1>
             <p className="text-muted-foreground">Manage and view your health documents</p>
           </div>
-          <Button onClick={handleFileUpload} className="bg-gradient-to-r from-primary to-primary-dark">
+          <Button onClick={handleFileUpload} className="bg-gradient-to-r from-primary to-secondary">
             <Upload className="h-4 w-4 mr-2" />
             Upload Record
           </Button>

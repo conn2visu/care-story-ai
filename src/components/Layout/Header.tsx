@@ -29,7 +29,7 @@ export const Header = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-primary to-primary-dark rounded-lg">
+            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-primary via-primary to-secondary rounded-lg">
               <Heart className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>
