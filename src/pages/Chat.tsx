@@ -14,9 +14,12 @@ import {
   Clock,
   FileText,
   Pill,
-  Activity
+  Activity,
+  Loader2
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   id: number;
@@ -28,18 +31,20 @@ interface Message {
 
 const Chat = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
       type: "ai",
-      content: "Hello Sameer! 👋 I'm your medical AI assistant. I can help you with information about your medical history, medicines, and health records. What would you like to know today?",
+      content: "Hello! 👋 I'm your medical AI assistant. I can analyze your uploaded prescription files and help you with information about your medical history, medicines, and health records. What would you like to know today?",
       timestamp: "10:30 AM",
       suggestions: [
-        "What medicines did I take last month?",
-        "Show my recent medical reports",
-        "Any medicine interactions to worry about?",
-        "When was my last cardiology checkup?"
+        "What medicines did I take according to my uploaded prescriptions?",
+        "Analyze my prescription files",
+        "Are there any medicine interactions to worry about?",
+        "Summarize my medical records"
       ]
     }
   ]);
@@ -47,18 +52,18 @@ const Chat = () => {
   const quickQuestions = [
     {
       icon: Pill,
-      question: "What medicines am I currently taking?",
+      question: "What medicines am I taking according to my prescriptions?",
       category: "Medicines"
     },
     {
       icon: FileText,
-      question: "Show my latest medical reports",
-      category: "Records"
+      question: "Analyze my uploaded prescription files",
+      category: "Analysis"
     },
     {
       icon: Activity,
-      question: "What was my diagnosis at Manipal Hospital?",
-      category: "History"
+      question: "Summarize my medical records",
+      category: "Summary"
     },
     {
       icon: Clock,
@@ -67,8 +72,8 @@ const Chat = () => {
     }
   ];
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
+  const handleSendMessage = async () => {
+    if (!message.trim() || isLoading || !user) return;
 
     // Add user message
     const userMessage: Message = {
@@ -79,22 +84,24 @@ const Chat = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setMessage("");
+    setIsLoading(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      let aiResponse = "";
-      
-      if (message.toLowerCase().includes("medicine")) {
-        aiResponse = "Based on your records, you're currently taking:\n\n• **Aspirin 75mg** - Once daily for heart health\n• **Atorvastatin 20mg** - Once daily (evening) for cholesterol\n\nBoth were prescribed by Dr. Rajesh Kumar at Manipal Hospital on January 15th, 2024. Would you like more details about any of these medicines?";
-      } else if (message.toLowerCase().includes("report") || message.toLowerCase().includes("record")) {
-        aiResponse = "Here are your recent medical reports:\n\n• **Chest X-Ray** (Jan 15, 2024) - Normal\n• **ECG Report** (Jan 8, 2024) - Shows mild irregularities\n• **Blood Test** (Jan 10, 2024) - All parameters within normal range\n\nAll reports are from Manipal Hospital, Bangalore. Would you like me to explain any specific results?";
-      } else if (message.toLowerCase().includes("interaction")) {
-        aiResponse = "⚠️ **Important Medicine Interaction Alert:**\n\nI found a potential HIGH RISK interaction between Aspirin and Warfarin in our database. If you're considering Warfarin, please consult Dr. Rajesh Kumar first as this combination increases bleeding risk.\n\nYour current medicines (Aspirin + Atorvastatin) are safe to take together.";
-      } else if (message.toLowerCase().includes("checkup") || message.toLowerCase().includes("appointment")) {
-        aiResponse = "Based on your last cardiology visit on January 15th, 2024:\n\n**Recommended next checkup:** April 15th, 2024 (3 months follow-up)\n\n**Reason:** Monitor chest pain treatment progress and heart health\n\nWould you like me to help you find Dr. Rajesh Kumar's contact information for scheduling?";
-      } else {
-        aiResponse = "I understand you're asking about your medical history. I can help you with:\n\n• Medicine information and interactions\n• Medical report summaries\n• Appointment scheduling recommendations\n• Treatment history from different hospitals\n\nCould you be more specific about what you'd like to know? For example, ask about your medicines, reports, or appointments.";
+    try {
+      // Call the medical AI edge function
+      const { data, error } = await supabase.functions.invoke('medical-ai-chat', {
+        body: {
+          message: message,
+          userId: user.id
+        }
+      });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Failed to get AI response');
       }
+
+      const aiResponse = data?.response || data?.fallback || "I'm sorry, I couldn't process your request at the moment.";
 
       const aiMessage: Message = {
         id: messages.length + 2,
@@ -104,9 +111,27 @@ const Chat = () => {
       };
 
       setMessages(prev => [...prev, aiMessage]);
-    }, 1500);
 
-    setMessage("");
+    } catch (error: any) {
+      console.error('Error calling AI:', error);
+      
+      const errorMessage: Message = {
+        id: messages.length + 2,
+        type: "ai",
+        content: "I'm sorry, I encountered an error while processing your request. Please try again or contact support if the issue persists.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+
+      toast({
+        title: "Error",
+        description: "Failed to get AI response. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleQuickQuestion = (question: string) => {
@@ -124,7 +149,7 @@ const Chat = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground flex items-center space-x-3">
-              <div className="bg-gradient-to-br from-primary to-primary-dark p-2 rounded-lg">
+              <div className="bg-gradient-to-br from-primary to-secondary p-2 rounded-lg">
                 <Sparkles className="h-6 w-6 text-primary-foreground" />
               </div>
               <span>AI Medical Assistant</span>
@@ -174,11 +199,12 @@ const Chat = () => {
                 <CardTitle className="text-lg">AI Capabilities</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
+                <p>✅ Prescription file analysis</p>
                 <p>✅ Medicine tracking & interactions</p>
-                <p>✅ Medical report analysis</p>
-                <p>✅ Appointment scheduling</p>
-                <p>✅ Health history timeline</p>
-                <p>✅ Multi-hospital data sync</p>
+                <p>✅ Medical record insights</p>
+                <p>✅ AI-powered health Q&A</p>
+                <p>✅ Secure data processing</p>
+                <p>✅ Real-time medical assistance</p>
               </CardContent>
             </Card>
           </div>
@@ -245,7 +271,7 @@ const Chat = () => {
               <div className="border-t p-4">
                 <div className="flex space-x-3">
                   <Input
-                    placeholder="Ask about your medicines, reports, or health history..."
+                    placeholder="Ask about your prescription files, medicines, or health records..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
@@ -253,14 +279,18 @@ const Chat = () => {
                   />
                   <Button 
                     onClick={handleSendMessage}
-                    disabled={!message.trim()}
-                    className="bg-gradient-to-r from-primary to-primary-dark"
+                    disabled={!message.trim() || isLoading}
+                    className="bg-gradient-to-r from-primary to-secondary"
                   >
-                    <Send className="h-4 w-4" />
+                    {isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
-                  💡 Tip: Ask specific questions like "What medicines am I taking?" or "Show my latest reports"
+                  💡 Tip: Ask me to "analyze my prescription files" or "what medicines am I taking?" based on your uploads
                 </p>
               </div>
             </Card>
