@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { useNavigate } from "react-router-dom";
 import { 
   Heart, 
   FileText, 
@@ -13,6 +14,8 @@ import {
 } from "lucide-react";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  
   const stats = [
     {
       title: "Medical Records",
@@ -188,15 +191,27 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button className="h-20 flex flex-col space-y-2" variant="outline">
+              <Button 
+                className="h-20 flex flex-col space-y-2" 
+                variant="outline"
+                onClick={() => navigate('/records')}
+              >
                 <Plus className="h-6 w-6" />
                 <span>Upload Medical Record</span>
               </Button>
-              <Button className="h-20 flex flex-col space-y-2" variant="outline">
+              <Button 
+                className="h-20 flex flex-col space-y-2" 
+                variant="outline"
+                onClick={() => navigate('/medicines')}
+              >
                 <Pill className="h-6 w-6" />
                 <span>Add Medicine</span>
               </Button>
-              <Button className="h-20 flex flex-col space-y-2" variant="outline">
+              <Button 
+                className="h-20 flex flex-col space-y-2" 
+                variant="outline"
+                onClick={() => navigate('/chat')}
+              >
                 <Heart className="h-6 w-6" />
                 <span>Ask AI Assistant</span>
               </Button>
