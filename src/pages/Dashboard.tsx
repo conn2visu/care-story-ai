@@ -1,7 +1,11 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Heart, 
   FileText, 
@@ -15,26 +19,28 @@ import {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   
-  const stats = [
+  const [stats, setStats] = useState([
     {
       title: "Medical Records",
-      value: "12",
+      value: "0",
       subtitle: "Documents uploaded",
       icon: FileText,
       color: "text-primary"
     },
     {
       title: "Current Medicines",
-      value: "3",
+      value: "0",
       subtitle: "Active prescriptions",
       icon: Pill,
       color: "text-secondary"
     },
     {
       title: "Last Checkup",
-      value: "2 weeks",
-      subtitle: "Manipal Hospital",
+      value: "N/A",
+      subtitle: "No records yet",
       icon: Calendar,
       color: "text-success"
     },
@@ -45,40 +51,118 @@ const Dashboard = () => {
       icon: TrendingUp,
       color: "text-warning"
     }
-  ];
+  ]);
 
-  const recentActivities = [
-    {
-      type: "medicine",
-      title: "Added Aspirin 75mg",
-      time: "2 hours ago",
-      icon: Pill
-    },
-    {
-      type: "record",
-      title: "Uploaded ECG Report",
-      time: "1 day ago", 
-      icon: FileText
-    },
-    {
-      type: "checkup",
-      title: "Visited Manipal Hospital",
-      time: "2 weeks ago",
-      icon: Heart
-    }
-  ];
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const alerts = [
-    {
-      type: "warning",
-      message: "Medicine interaction detected between Aspirin and Warfarin",
-      action: "Review"
-    },
-    {
-      type: "info",
-      message: "Schedule your next cardiology checkup",
-      action: "Schedule"
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
     }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch prescriptions count
+      const { data: prescriptions, error: prescError } = await supabase
+        .from('prescriptions')
+        .select('*')
+        .eq('user_id', user?.id);
+
+      // Fetch medicines count
+      const { data: medicines, error: medError } = await supabase
+        .from('medicines')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('status', 'active');
+
+      // Fetch recent activities
+      const { data: activities, error: actError } = await supabase
+        .from('activities')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      // Fetch health alerts
+      const { data: healthAlerts, error: alertError } = await supabase
+        .from('health_alerts')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('is_read', false)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (prescError || medError || actError || alertError) {
+        console.error('Error fetching dashboard data:', { prescError, medError, actError, alertError });
+      }
+
+      // Update stats
+      setStats(prev => [
+        { ...prev[0], value: String(prescriptions?.length || 0) },
+        { ...prev[1], value: String(medicines?.length || 0) },
+        { ...prev[2], value: prescriptions?.length ? getLastCheckupText(prescriptions) : "N/A", subtitle: prescriptions?.length ? "Last prescription" : "No records yet" },
+        { ...prev[3] }
+      ]);
+
+      // Update activities
+      setRecentActivities(activities || []);
+      
+      // Update alerts
+      setAlerts(healthAlerts || []);
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getLastCheckupText = (prescriptions: any[]) => {
+    if (!prescriptions.length) return "N/A";
+    const latest = prescriptions.sort((a, b) => new Date(b.upload_date).getTime() - new Date(a.upload_date).getTime())[0];
+    const daysDiff = Math.floor((Date.now() - new Date(latest.upload_date).getTime()) / (1000 * 3600 * 24));
+    if (daysDiff === 0) return "Today";
+    if (daysDiff === 1) return "Yesterday";
+    if (daysDiff < 7) return `${daysDiff} days ago`;
+    if (daysDiff < 30) return `${Math.floor(daysDiff / 7)} weeks ago`;
+    return `${Math.floor(daysDiff / 30)} months ago`;
+  };
+
+  const handleMarkAlertAsRead = async (alertId: string) => {
+    try {
+      const { error } = await supabase
+        .from('health_alerts')
+        .update({ is_read: true })
+        .eq('id', alertId);
+
+      if (error) throw error;
+
+      setAlerts(prev => prev.filter((alert: any) => alert.id !== alertId));
+      toast({
+        title: "Alert marked as read",
+        description: "The alert has been dismissed"
+      });
+    } catch (error) {
+      console.error('Error marking alert as read:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update alert",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleScheduleCheckup = () => {
+    toast({
+      title: "Scheduling Feature",
+      description: "Checkup scheduling will be available soon"
+    });
+  };
+
+  const oldStats = [
   ];
 
   return (
@@ -137,20 +221,41 @@ const Dashboard = () => {
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {recentActivities.map((activity, index) => {
-                const IconComponent = activity.icon;
-                return (
-                  <div key={index} className="flex items-center space-x-4 p-3 rounded-lg bg-accent">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <IconComponent className="h-4 w-4 text-primary" />
+              {loading ? (
+                <div className="text-center text-muted-foreground">Loading activities...</div>
+              ) : recentActivities.length === 0 ? (
+                <div className="text-center text-muted-foreground">
+                  <p>No recent activities</p>
+                  <p className="text-xs mt-1">Start by uploading medical records or adding medicines</p>
+                </div>
+              ) : (
+                recentActivities.map((activity: any, index) => {
+                  const getActivityIcon = (type: string) => {
+                    switch (type) {
+                      case 'medicine': return Pill;
+                      case 'record': return FileText;
+                      case 'prescription': return FileText;
+                      case 'checkup': return Heart;
+                      default: return Clock;
+                    }
+                  };
+                  
+                  const IconComponent = getActivityIcon(activity.type);
+                  const timeAgo = new Date(activity.created_at).toLocaleDateString();
+                  
+                  return (
+                    <div key={index} className="flex items-center space-x-4 p-3 rounded-lg bg-accent">
+                      <div className="bg-primary/10 p-2 rounded-full">
+                        <IconComponent className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{activity.title}</p>
+                        <p className="text-sm text-muted-foreground">{timeAgo}</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{activity.title}</p>
-                      <p className="text-sm text-muted-foreground">{activity.time}</p>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </CardContent>
           </Card>
 
@@ -163,23 +268,43 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {alerts.map((alert, index) => (
-                <div 
-                  key={index} 
-                  className={`p-4 rounded-lg border-l-4 ${
-                    alert.type === 'warning' 
-                      ? 'bg-warning/10 border-warning' 
-                      : 'bg-primary/10 border-primary'
-                  }`}
-                >
-                  <p className="text-sm font-medium text-foreground mb-2">
-                    {alert.message}
-                  </p>
-                  <Button size="sm" variant="outline">
-                    {alert.action}
-                  </Button>
+              {loading ? (
+                <div className="text-center text-muted-foreground">Loading alerts...</div>
+              ) : alerts.length === 0 ? (
+                <div className="text-center text-muted-foreground">
+                  <p>No health alerts</p>
+                  <p className="text-xs mt-1">You're all up to date!</p>
                 </div>
-              ))}
+              ) : (
+                alerts.map((alert: any, index) => (
+                  <div 
+                    key={index} 
+                    className={`p-4 rounded-lg border-l-4 ${
+                      alert.type === 'warning' || alert.type === 'critical'
+                        ? 'bg-warning/10 border-warning' 
+                        : 'bg-primary/10 border-primary'
+                    }`}
+                  >
+                    <p className="text-sm font-medium text-foreground mb-2">
+                      {alert.message}
+                    </p>
+                    <div className="flex space-x-2">
+                      {alert.type === 'reminder' && (
+                        <Button size="sm" variant="outline" onClick={handleScheduleCheckup}>
+                          Schedule
+                        </Button>
+                      )}
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => handleMarkAlertAsRead(alert.id)}
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </div>

@@ -14,6 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
+      activities: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      health_alerts: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          scheduled_for: string | null
+          severity: string | null
+          title: string
+          type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          scheduled_for?: string | null
+          severity?: string | null
+          title: string
+          type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          scheduled_for?: string | null
+          severity?: string | null
+          title?: string
+          type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      medicines: {
+        Row: {
+          created_at: string
+          dosage: string
+          end_date: string | null
+          file_name: string | null
+          file_url: string | null
+          frequency: string
+          id: string
+          instructions: string | null
+          name: string
+          prescriber: string | null
+          purpose: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dosage: string
+          end_date?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          frequency: string
+          id?: string
+          instructions?: string | null
+          name: string
+          prescriber?: string | null
+          purpose?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dosage?: string
+          end_date?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          frequency?: string
+          id?: string
+          instructions?: string | null
+          name?: string
+          prescriber?: string | null
+          purpose?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       prescriptions: {
         Row: {
           created_at: string
@@ -58,6 +181,48 @@ export type Database = {
           title?: string
           updated_at?: string
           upload_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          created_at: string
+          date_of_birth: string | null
+          display_name: string | null
+          emergency_contact: string | null
+          id: string
+          medical_notes: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          display_name?: string | null
+          emergency_contact?: string | null
+          id?: string
+          medical_notes?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          display_name?: string | null
+          emergency_contact?: string | null
+          id?: string
+          medical_notes?: string | null
+          phone?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

@@ -60,7 +60,11 @@ export const Header = () => {
 
           {/* User Profile */}
           <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => window.open('/profile', '_blank')}
+            >
               <Settings className="h-4 w-4" />
             </Button>
             <Avatar className="h-8 w-8">
