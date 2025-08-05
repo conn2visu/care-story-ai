@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Records from "./pages/Records";
 import Medicines from "./pages/Medicines";
 import Chat from "./pages/Chat";
+import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
                   <Route path="/records" element={<Records />} />
                   <Route path="/medicines" element={<Medicines />} />
                   <Route path="/chat" element={<Chat />} />
+                  <Route path="/profile" element={<Profile />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </ProtectedRoute>
