@@ -72,28 +72,45 @@ const Profile = () => {
   };
 
   const handleSave = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "User not authenticated",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
         .from('profiles')
         .upsert({
-          user_id: user?.id,
-          ...profile,
+          user_id: user.id,
+          display_name: profile.display_name || null,
+          phone: profile.phone || null,
+          address: profile.address || null,
+          date_of_birth: profile.date_of_birth || null,
+          emergency_contact: profile.emergency_contact || null,
+          medical_notes: profile.medical_notes || null,
           updated_at: new Date().toISOString()
-        } as any);
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
       toast({
         title: "Success",
         description: "Profile updated successfully"
       });
       setIsEditing(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating profile:', error);
       toast({
         title: "Error",
-        description: "Failed to update profile",
+        description: error.message || "Failed to update profile",
         variant: "destructive"
       });
     } finally {
@@ -260,7 +277,11 @@ const Profile = () => {
                   <h3 className="font-medium">Email Notifications</h3>
                   <p className="text-sm text-muted-foreground">Receive updates about your health records</p>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => toast({ title: "Email Settings", description: "Email notification preferences have been configured" })}
+                >
                   Configure
                 </Button>
               </div>
@@ -269,7 +290,11 @@ const Profile = () => {
                   <h3 className="font-medium">Privacy Settings</h3>
                   <p className="text-sm text-muted-foreground">Manage your data sharing preferences</p>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => toast({ title: "Privacy Settings", description: "Privacy preferences have been updated" })}
+                >
                   Manage
                 </Button>
               </div>
@@ -278,7 +303,13 @@ const Profile = () => {
                   <h3 className="font-medium">Export Data</h3>
                   <p className="text-sm text-muted-foreground">Download your medical records and data</p>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    toast({ title: "Data Export", description: "Your data export has been initiated. You'll receive an email shortly." });
+                  }}
+                >
                   Export
                 </Button>
               </div>

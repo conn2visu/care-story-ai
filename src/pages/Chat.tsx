@@ -69,6 +69,26 @@ const Chat = () => {
       icon: Clock,
       question: "When should I schedule my next checkup?",
       category: "Scheduling"
+    },
+    {
+      icon: Pill,
+      question: "What are the side effects of my current medications?",
+      category: "Safety"
+    },
+    {
+      icon: Activity,
+      question: "Are there any drug interactions I should be aware of?",
+      category: "Safety"
+    },
+    {
+      icon: FileText,
+      question: "What's my recent test results summary?",
+      category: "Reports"
+    },
+    {
+      icon: Clock,
+      question: "Remind me about my medication schedule",
+      category: "Reminders"
     }
   ];
 

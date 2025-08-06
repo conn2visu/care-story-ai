@@ -30,6 +30,10 @@ const Records = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [filterDialogOpen, setFilterDialogOpen] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Form state
@@ -239,11 +243,17 @@ const Records = () => {
     }
   };
 
-  const filteredRecords = medicalRecords.filter(record =>
-    record.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.hospital.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    record.doctor.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRecords = medicalRecords.filter(record => {
+    const matchesSearch = record.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.hospital.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      record.doctor.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = selectedStatus === "all" || record.status.toLowerCase() === selectedStatus.toLowerCase();
+    const matchesType = selectedType === "all" || record.type.toLowerCase() === selectedType.toLowerCase();
+    const matchesCategory = selectedCategory === "all" || record.category.toLowerCase() === selectedCategory.toLowerCase();
+    
+    return matchesSearch && matchesStatus && matchesType && matchesCategory;
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-accent">
@@ -273,10 +283,78 @@ const Records = () => {
                   className="pl-10"
                 />
               </div>
-              <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
+              <Dialog open={filterDialogOpen} onOpenChange={setFilterDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filter
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Filter Records</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="status-filter">Status</Label>
+                      <select
+                        id="status-filter"
+                        value={selectedStatus}
+                        onChange={(e) => setSelectedStatus(e.target.value)}
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="normal">Normal</option>
+                        <option value="abnormal">Abnormal</option>
+                        <option value="active">Active</option>
+                        <option value="reviewed">Reviewed</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="type-filter">Type</Label>
+                      <select
+                        id="type-filter"
+                        value={selectedType}
+                        onChange={(e) => setSelectedType(e.target.value)}
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="all">All Types</option>
+                        <option value="diagnostic">Diagnostic</option>
+                        <option value="prescription">Prescription</option>
+                        <option value="lab report">Lab Report</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label htmlFor="category-filter">Category</Label>
+                      <select
+                        id="category-filter"
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="w-full p-2 border rounded-md"
+                      >
+                        <option value="all">All Categories</option>
+                        <option value="cardiology">Cardiology</option>
+                        <option value="general">General</option>
+                      </select>
+                    </div>
+                    <div className="flex justify-end space-x-2 pt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedStatus("all");
+                          setSelectedType("all");
+                          setSelectedCategory("all");
+                        }}
+                      >
+                        Clear Filters
+                      </Button>
+                      <Button onClick={() => setFilterDialogOpen(false)}>
+                        Apply Filters
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardContent>
         </Card>
